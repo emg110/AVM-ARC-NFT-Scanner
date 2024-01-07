@@ -9,5 +9,44 @@
             "appID": 0
         }
     },
-    "methods": []
+    "methods": [
+        {
+            "name": "arc72_ownerOf",
+            "desc": "Returns the address of the current owner of the NFT with the given tokenId",
+            "readonly": true,
+            "args": [
+                {
+                    "type": "uint256",
+                    "name": "tokenId",
+                    "desc": "The ID of the NFT"
+                }
+            ],
+            "returns": {
+                "type": "address",
+                "desc": "The current owner of the NFT."
+            }
+        },
+        {
+            "name": "arc72_transferFrom",
+            "desc": "Transfers ownership of an NFT",
+            "readonly": false,
+            "args": [
+                {
+                    "type": "address",
+                    "name": "from"
+                },
+                {
+                    "type": "address",
+                    "name": "to"
+                },
+                {
+                    "type": "uint256",
+                    "name": "tokenId"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        },
+    ]
 }
