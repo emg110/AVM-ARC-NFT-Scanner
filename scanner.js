@@ -448,6 +448,7 @@ module.exports = class {
             let confirmedRound = resultTransferFrom.confirmedRound
             console.info(`ARC72 TransferFrom ABI call TXId =  %s`, txid);
             console.info(`ARC72 TransferFrom ABI call TXN confirmed round =  %s`, confirmedRound);
+            fs.writeFileSync(path.join(__dirname, 'start_round.txt'), `${confirmedRound}`)
             if (Number(idx) === 0) await this.printTransactionLogs(txid, confirmedRound)
             
         }
@@ -519,8 +520,8 @@ module.exports = class {
 
     }
     async printApplTransactionsFromBlocks() {
-        let start_round = this.config.deployment['start_round']
-        if (algosdk.isValidAddress(this.accountObject.addr)) {
+        let start_round = Number( fs.readFileSync(path.join(__dirname, 'start_round.txt'), 'utf8')) || this.config.deployment['start_round'];
+        if (algosdk.isValidAddress(this.accountObject.addr) && start_round > 0) {
             const urlTrx = `${this.config.scanner.network === 'testnet' ? this.config.scanner['algod_testnet_remote_server'] : this.config.scanner['algod_remote_server']}/v2/blocks/${start_round}`;
             let resTrx = await fetch(urlTrx, {
                 method: "GET",
@@ -533,7 +534,8 @@ module.exports = class {
                 if (dataTrx.block && dataTrx.block.txns) {
                     let txns = dataTrx.block.txns
                     const txnsLength = txns.length
-                    console.info("Number of TXNs in block: %s", txnsLength)
+                    console.info("Scanned Block round: %s", start_round)
+                    console.info("Number of TXNs in scanned block: %s", txnsLength)
                     txns = await txns.map(async (item, index) => {
                         if (item && item.txn) {
                             let itxns = item.dt && item.dt.itx ? item.dt.itx : null;
@@ -560,8 +562,10 @@ module.exports = class {
                         }
                     }).filter((item) => item.txn || item.itxns)
                     console.info("Number of appl creation TXNs in block: %s", txns.length)
-                    fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(txns, null, 2))
-                    return txns
+                    if(txns.length>0){
+                        fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(txns, null, 2));
+                    }
+                    
                 }
 
             }
@@ -575,8 +579,8 @@ module.exports = class {
     async run() {
         await this.deploymentAccount()
         if (this.config.deployment['deployment_report']) await this.deploymentReport();
-        if (this.config.deployment['arc72_scanner_round']) await this.printApplTransactionsFromBlocks();
         if (this.config.deployment['arc72_deploy']) await this.deployArc72Contract();
+        if (this.config.deployment['arc72_scanner_round']) await this.printApplTransactionsFromBlocks();
         process.exit();
     }
 }
