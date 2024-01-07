@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const config = require('./config.json');
-
 const Scanner = require('./scanner.js');
 const { default: algosdk } = require('algosdk');
 
@@ -29,6 +28,5 @@ const scanner = new Scanner({
     arc72ApprovalProgData: fs.readFileSync(path.join(__dirname, 'arc72-app.teal')),
     arc72ClearProgData: fs.readFileSync(path.join(__dirname, 'arc72-clear.teal')),
     arc72Schema: fs.readFileSync(path.join(__dirname, 'arc72-abi.json')),
-
 });
 scanner.run();
