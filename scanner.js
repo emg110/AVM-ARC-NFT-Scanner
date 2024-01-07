@@ -36,6 +36,10 @@ module.exports = class {
         this.trxTransfer = null
 
     }
+    /**
+     * Imports an account using the provided mnemonic and returns the account object.
+     * @returns {Object} The imported account object.
+     */
     importAccount() {
         const acc = algosdk.mnemonicToSecretKey(this.mnemonic);
         let addr = acc.addr
@@ -49,7 +53,13 @@ module.exports = class {
         console.warn(this.config.scanner['algo_dispenser'] + addr);
         return { acc, accRekey };
     };
-
+    /**
+     * Retrieves a method from a contract by its name.
+     * @param {string} name - The name of the method.
+     * @param {object} contract - The contract object.
+     * @returns {object} - The method object.
+     * @throws {Error} - If the method is undefined.
+     */
     getMethodByName(name, contract) {
         const m = contract.methods.find((mt) => { return mt.name == name })
         if (m === undefined)
@@ -57,6 +67,10 @@ module.exports = class {
         return m
     }
 
+    /**
+     * Fetches the wallet information for the Algorand blockchain.
+     * @returns {Promise<void>} A promise that resolves when the wallet information is fetched.
+     */
     async fetchAlgoWalletInfo() {
         if (algosdk.isValidAddress(this.accountObject.addr)) {
             const url = `${this.config.scanner.network === 'testnet' ? this.config.scanner['algod_testnet_remote_server'] : this.config.scanner['algod_remote_server']}/v2/accounts/${this.accountObject.addr}`;
@@ -122,15 +136,32 @@ module.exports = class {
 
         }
     }
+    /**
+     * Converts a base64 string to an array of bytes.
+     * 
+     * @param {string} base64 - The base64 string to convert.
+     * @returns {Uint8Array} - The array of bytes.
+     */
     base64ToBytes(base64) {
         const binString = atob(base64);
         return Uint8Array.from(binString, (m) => m.codePointAt(0));
     }
 
+    /**
+     * Converts an array of bytes to a base64-encoded string.
+     * @param {number[]} bytes - The array of bytes to convert.
+     * @returns {string} The base64-encoded string.
+     */
     bytesToBase64(bytes) {
         const binString = String.fromCodePoint(...bytes);
         return btoa(binString);
     }
+    /**
+     * Concatenates multiple arrays into a single Uint8Array.
+     * 
+     * @param {Array<Array<number>>} arrs - The arrays to be concatenated.
+     * @returns {Uint8Array} - The concatenated Uint8Array.
+     */
     concatArrays(arrs) {
         const size = arrs.reduce((sum, arr) => sum + arr.length, 0);
         const c = new Uint8Array(size);
@@ -143,6 +174,12 @@ module.exports = class {
 
         return c;
     }
+    /**
+     * Retrieves and prints transaction logs for a given transaction ID.
+     * @param {string} txID - The transaction ID.
+     * @param {number} confirmedRound - The confirmed round of the transaction.
+     * @returns {Promise<void>} - A promise that resolves once the logs are printed.
+     */
     async printTransactionLogs(txID, confirmedRound) {
         try {
             if (algosdk.isValidAddress(this.accountObject.addr)) {
@@ -189,6 +226,11 @@ module.exports = class {
             console.error(error)
         }
     }
+    /**
+     * Prints the global state of an application.
+     * @param {number} appId - The ID of the application.
+     * @returns {Promise<void>} - A promise that resolves when the global state is printed.
+     */
     async printAppGlobalState(appId) {
         if (algosdk.isValidAddress(this.accountObject.addr)) {
             const urlApp = `${this.config.scanner.network === 'testnet' ? this.config.scanner['algod_testnet_remote_server'] : this.config.scanner['algod_remote_server']}/v2/applications/${appId}`;
@@ -242,6 +284,10 @@ module.exports = class {
 
         }
     }
+    /**
+     * Prints the account balance, created assets, and their details.
+     * @returns {Promise<void>} A promise that resolves once the printing is done.
+     */
     async printCreatedAsset() {
         let accountInfo = await this.indexerClient.lookupAccountByID(this.accountObject.addr).do();
         this.accountBalance = accountInfo.account.amount
@@ -276,6 +322,12 @@ module.exports = class {
             }
         }
     }
+    /**
+     * Prints the asset holding information for a given account and asset ID.
+     * @param {string} account - The account ID.
+     * @param {string} assetid - The asset ID.
+     * @returns {Promise<void>} - A promise that resolves when the asset holding information is printed.
+     */
     async printAssetHolding(account, assetid) {
         let accountInfo = await this.indexerClient.lookupAccountByID(account).do();
         this.accountBalance = accountInfo.account.amount
@@ -309,9 +361,22 @@ module.exports = class {
             }
         }
     }
+    /**
+     * Generates a random integer between the specified minimum and maximum values.
+     *
+     * @param {number} min - The minimum value (inclusive).
+     * @param {number} max - The maximum value (exclusive).
+     * @returns {number} The random integer generated.
+     */
     getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min)) + min;
     }
+    /**
+     * Generates a deployment report by fetching Algo wallet information,
+     * printing created assets, and printing asset holdings.
+     * 
+     * @returns {Promise<void>} A promise that resolves when the deployment report is generated.
+     */
     async deploymentReport() {
         try {
             await this.fetchAlgoWalletInfo();
@@ -322,6 +387,10 @@ module.exports = class {
             console.error(err);
         }
     }
+    /**
+     * Retrieves the deployment account for the scanner.
+     * @returns {Promise<void>} A promise that resolves when the deployment account is retrieved.
+     */
     async deploymentAccount() {
         try {
             const accounts = await this.importAccount();
@@ -331,6 +400,10 @@ module.exports = class {
             console.error(err);
         }
     }
+    /**
+     * Runs the scanner.
+     * @returns {Promise<void>} A promise that resolves when the scanner has finished running.
+     */
     async run() {
         await this.deploymentAccount()
         if (this.config.deployment['deployment_report']) await this.deploymentReport();
