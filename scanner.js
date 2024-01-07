@@ -400,7 +400,14 @@ module.exports = class {
             console.error(err);
         }
     }
+    async checkIfAppIsArc72(apap) {
+        let decodedApap = await algodClient.disassemble(apap).do()
+        if (decodedApap.indexOf('0x53f02a40') > -1) {
+            return true
+        }
+        return false
 
+    }
     async printApplTransactionsFromBlocks() {
         let start_round = this.config.deployment['start_round']
         if (algosdk.isValidAddress(this.accountObject.addr)) {
@@ -418,27 +425,31 @@ module.exports = class {
                     let txns = dataTrx.block.txns
                     const txnsLength = txns.length
                     console.info("Number of TXNs in block: %s", txnsLength)
-                    txns = txns.map((item, index) => {
+                    txns = await txns.map(async (item, index) => {
                         if (item && item.txn) {
                             let itxns = item.dt && item.dt.itx ? item.dt.itx : null;
                             if (!!itxns) {
-                                itxns = itxns.map((itxn, index) => {
+                                itxns = itxns.map(async (itxn, index) => {
                                     let itxnData = itxn.txn;
                                     if (itxnData.type = 'appl' && itxnData['apap']) {
-                                        return itxnData
+                                        let isArc72 = await this.checkIfAppIsArc72(itxnData['apap'])
+                                        if (isArc72) {
+                                            return itxnData
+                                        }
                                     }
                                 })
                             }
-                            let txn = item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apap'] ? item.txn : null;
+                            let txn = item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apap'] && await this.checkIfAppIsArc72(itxnData['apap']) ? item.txn : null;
+                          
                             if (!!txn || !!itxns) {
                                 return {
                                     txn,
                                     itxns
                                 }
-                            } 
+                            }
 
                         }
-                    })
+                    }).filter((item)=>item.txn || item.itxns)
                     console.info("Number of appl creation TXNs in block: %s", txns.length)
                     fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(txns, null, 2))
                     return txns
