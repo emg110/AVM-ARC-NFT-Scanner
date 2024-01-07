@@ -449,33 +449,7 @@ module.exports = class {
             console.info(`ARC72 TransferFrom ABI call TXId =  %s`, txid);
             console.info(`ARC72 TransferFrom ABI call TXN confirmed round =  %s`, confirmedRound);
             if (Number(idx) === 0) await this.printTransactionLogs(txid, confirmedRound)
-            let returnedResults = resultTransferFrom.methodResults[idx].rawReturnValue
-            try {
-                let addr = algosdk.decodeAddress(returnedResults)
-                console.info("ARC72 Transfer from ABI Exec method TransferFrom = %s", addr);
-            } catch (error) {
-                try {
-                    let uint = algosdk.decodeUint64(returnedResults)
-                    if (uint > 0 && uint < 9999999999) {
-                        console.info("ARC72 Contract ABI Exec method TransferFrom = %s", uint);
-                    } else if (Buffer.from(returnedResults).byteLength === 8 && uint === 0) {
-                        console.info(`ARC72 ABI Call log decodedUint64 [${logIndex}]: %s`, 0)
-                    } else {
-                        throw new Error();
-                    }
-                } catch (error) {
-                    try {
-                        let res = Buffer.from(returnedResults).toString()
-                        console.info("ARC72 Contract ABI Exec method result = %s", res)
-                    } catch (error) {
-                        let res = Buffer.from(returnedResults)
-
-                        let resBase32 = base32.encode(res).replace(/=/g, '').slice(0, 52)
-
-                        console.info("ARC72 Contract ABI Exec method result = %s", resBase32);
-                    }
-                }
-            }
+            
         }
     }
     async deployArc72Contract() {
@@ -525,8 +499,8 @@ module.exports = class {
         this.applicationId = appId
         this.applicationAddr = algosdk.getApplicationAddress(appId);
         await this.callArc72TransferFrom(1)
-        await this.callArc72TransferFrom(2)
-        await this.callArc72TransferFrom(3)
+        // await this.callArc72TransferFrom(2)
+        // await this.callArc72TransferFrom(3)
         console.info('------------------------------')
         console.info("ARC 72 Application Address: %s", algosdk.getApplicationAddress(Number(appId)));
         console.info('------------------------------')
