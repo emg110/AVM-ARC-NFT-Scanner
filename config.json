@@ -21,7 +21,7 @@
     "num_local_byte": 0,
     "num_global_int": 5,
     "num_global_byte": 5,
-    "deployer_report": true,
+    "deployment_report": true,
     "arc72_scanner_loop": false,
     "arc72_deploy": false,
     "arc72_scanner_with_deploy_loop": false,
