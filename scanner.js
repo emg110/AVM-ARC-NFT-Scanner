@@ -578,7 +578,6 @@ module.exports = class {
 
     }
 
-
     /**
      * Prints application transactions from blocks.
      * @async
@@ -660,7 +659,7 @@ module.exports = class {
                                 }
                             })),
                         })
-                        
+
                         if (indexerRes.status === 200) {
                             let indexerData = await indexerRes.json()
                             if (indexerData && indexerData.data) {
