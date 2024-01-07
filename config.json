@@ -1,6 +1,6 @@
 {
   "scanner": {
-    "scanner_wallet_address": "",
+    "scanner_wallet_address": "LWHONYT2E4VYAONSLUYTHE7TVYA7BHJ4ZGJT2OJODIQG7L42YNUEACZ4BU",
     "host": "",
     "network": "testnet",
     "algod_remote_server": "https://mainnet-api.algonode.cloud",

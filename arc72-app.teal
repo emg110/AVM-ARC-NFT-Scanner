@@ -1,0 +1,171 @@
+// ARC NFT Scanner ARC72 Implementation
+// Version 0.0.2
+// Creator: @emg110.algo
+// Github: https://github.com/emg110/AVM-ARC-NFT-Scanner
+
+#pragma version 8
+//Check TXN first
+callsub branch_check_txn
+
+// Check if the transaction is a create app call with app ID of 0
+txn ApplicationID
+bz branch_create
+
+// Checking onCompletion type for delete application call
+txn OnCompletion
+
+int DeleteApplication
+==
+bnz branch_delete
+
+// Checking onCompletion type for update application call
+txn OnCompletion
+
+int UpdateApplication
+==
+bnz branch_update
+
+// Checking onCompletion type for close out application call
+txn OnCompletion
+int CloseOut
+==
+bnz branch_closeout
+
+// Checking onCompletion type for optin application call
+txn OnCompletion
+int OptIn
+==
+bnz branch_optin
+
+// Checks the number of application args , if 0 then no method it is
+txn NumAppArgs
+int 0
+==
+bz branch_method_router
+b branch_error
+
+branch_method_router:
+
+	method "create_arc72_token(account)uint256"
+	txn ApplicationArgs 0
+	==
+	bnz method_create_arc72_token
+
+    method "arc72_ownerOf(uint256)address"
+	txn ApplicationArgs 0
+	==
+	bnz method_arc72_ownerOf
+
+    method "arc72_transferFrom(address,address,uint256)void"
+	txn ApplicationArgs 0
+	==
+	bnz method_arc72_transferFrom
+
+	b branch_error
+
+
+sub_check_owner_auth:
+
+    txn Sender
+    global CreatorAddress
+    ==
+    assert
+    retsub
+
+branch_create:
+
+	byte "Version"
+	byte "0.0.2"
+	app_global_put
+
+	byte "application_name"
+	byte "ARC72_Indexer_test_contract"
+	app_global_put
+
+	byte "application_description"
+	byte "ARC72 NFT contract"
+	app_global_put
+
+	global CurrentApplicationID
+	itob
+	store 1
+
+	byte "ARC72 NFT contract created! "
+	load 1
+	concat
+	b branch_log_return
+
+branch_update:
+
+	callsub sub_check_owner_auth
+	global CurrentApplicationID
+	itob
+	store 1
+	byte "ARC72 NFT contract updated! "
+	load 1
+	concat
+	b branch_log_return
+
+branch_delete:
+
+	callsub sub_check_owner_auth
+	int 1
+	return
+
+branch_closeout:
+
+	err
+
+branch_optin:
+
+	err
+
+branch_check_txn:
+
+	// Checks RekeyTo address transaction field to be empty (ZeroAddress)
+	txn RekeyTo
+
+	global ZeroAddress
+	==
+	assert
+
+	// Checks CloseRemainderTo address transaction field to be empty (ZeroAddress)
+	txn CloseRemainderTo
+
+	global ZeroAddress
+	==
+	assert
+
+	// Checks AssetCloseTo address transaction field to be empty (ZeroAddress)
+	txn AssetCloseTo
+
+	global ZeroAddress
+	==
+	assert
+
+	// Check transaction type to be application call
+	txn TypeEnum
+
+	int appl
+	==
+	assert
+
+	// Checking transaction fee
+	txn Fee
+
+	global MinTxnFee
+	>=
+	assert
+	retsub
+
+// Handles error endings
+branch_error:
+	err
+
+// Handles happy endings
+branch_log_return:
+
+	log
+	int 1
+	return
+

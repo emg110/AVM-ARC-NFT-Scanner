@@ -1,0 +1,13 @@
+{
+    "name": "arc72-contract",
+    "desc": "This is an arc72 contract implementation for ARC NFT Indexer scanner module",
+    "networks": {
+        "MainNet": {
+            "appID": 0
+        },
+        "TestNet": {
+            "appID": 0
+        }
+    },
+    "methods": []
+}

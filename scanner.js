@@ -17,11 +17,11 @@ module.exports = class {
         this.algodTestServer = props.config.scanner.algod_testnet_remote_server
         this.algodToken = props.config.scanner.algod_remote_token
         this.algodPort = props.config.scanner.algod_remote_port
-        this.algodClient = new props.algosdk.Algodv2(this.algodToken, this.algodServer, this.algodPort)
+        this.algodClient = new algosdk.Algodv2(this.algodToken, this.algodServer, this.algodPort)
         this.indexerServer = props.config.scanner.network === 'testnet' ? props.config.scanner.indexer_testnet_remote_server : props.config.scanner.indexer_remote_server
         this.indexerToken = props.config.scanner.indexer_remote_token
         this.indexerPort = props.config.scanner.indexer_remote_port
-        this.indexerClient = new props.algosdk.Indexer(this.algodToken, this.indexerServer, this.indexerPort)
+        this.indexerClient = new algosdk.Indexer(this.algodToken, this.indexerServer, this.indexerPort)
         this.approvalProgData = props.approvalProgData
         this.clearProgData = props.clearProgData
 
