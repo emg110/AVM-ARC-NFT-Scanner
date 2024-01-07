@@ -51,7 +51,7 @@ graph TD
 
 ## Tech stack
 
-- Vercel: Infrastructure used for NextJs based presenter API application (OA3 based)
+
 - Cloudflare: Infrastructure used for Indexing API
 - Cloudflare D1: SQL storage (SQLite API) 
 - Cloudflare KV: KeyValue storage for internal parameters!
