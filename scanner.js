@@ -21,15 +21,9 @@ module.exports = class {
         this.indexerServer = props.config.scanner.network === 'testnet' ? props.config.scanner.indexer_testnet_remote_server : props.config.scanner.indexer_remote_server
         this.indexerToken = props.config.scanner.indexer_remote_token
         this.indexerPort = props.config.scanner.indexer_remote_port
-
-
-      
         this.indexerClient = new props.algosdk.Indexer(this.algodToken, this.indexerServer, this.indexerPort)
-
         this.approvalProgData = props.approvalProgData
         this.clearProgData = props.clearProgData
-
-
 
         this.accountObject = null
         this.accountBalance = null
