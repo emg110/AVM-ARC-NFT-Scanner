@@ -415,29 +415,33 @@ module.exports = class {
             let dataTrx = await resTrx.json()
             if (dataTrx) {
                 if (dataTrx.block && dataTrx.block.txns) {
-                    const block = dataTrx.block
-                    dataTrx.block.txns.map((item, index) => {
+                    let txns = dataTrx.block.txns
+                    const txnsLength = txns.length
+                    console.info("Number of TXNs in block: %s", txnsLength)
+                    txns = txns.map((item, index) => {
                         if (item && item.txn) {
-                            let innerTxnData = item.dt && item.dt.itx ? item.dt.itx : null;
-                            if (!!innerTxnData) {
-                                innerTxnData = innerTxnData.map((innerTxn, index) => {
-                                    let itxnData = innerTxn.txn;
-                                    if (itxnData.type = 'appl') {
+                            let itxns = item.dt && item.dt.itx ? item.dt.itx : null;
+                            if (!!itxns) {
+                                itxns = itxns.map((itxn, index) => {
+                                    let itxnData = itxn.txn;
+                                    if (itxnData.type = 'appl' && itxnData['apap']) {
                                         return itxnData
                                     }
-
                                 })
                             }
-                            let txnData = item.txn;
-                            return {
-                                txnData,
-                                innerTxnData
-                            }
-                        }
+                            let txn = item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apap'] ? item.txn : null;
+                            if (!!txn || !!itxns) {
+                                return {
+                                    txn,
+                                    itxns
+                                }
+                            } 
 
+                        }
                     })
-                    fs.writeFileSync(path.join(__dirname, `round_${start_round}_scanned_txns.json`), JSON.stringify(block, null, 2))
-                    return block
+                    console.info("Number of appl creation TXNs in block: %s", txns.length)
+                    fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(txns, null, 2))
+                    return txns
                 }
 
             }

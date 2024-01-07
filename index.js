@@ -4,6 +4,13 @@ const config = require('./config.json');
 const Scanner = require('./scanner.js');
 const { default: algosdk } = require('algosdk');
 
+const folderPath = path.join(__dirname, 'rounds');
+if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath);
+    console.log(`Rounds output folder created: ${folderPath}`);
+} else {
+    console.log(`Rounds output folder already exists: ${folderPath}`);
+}
 let mnemonics = ""
 try {
     mnemonics = fs.readFileSync(path.join(__dirname, 'arc-72_mnemonic.txt'), 'utf8')
