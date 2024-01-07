@@ -617,9 +617,23 @@ module.exports = class {
                         }
                     })
                     txns = txns.filter((item)=>!!item && item !== null)
-                    console.info("Number of appl creation TXNs in block: %s", txns.length)
+                    console.info("Number of ARC72 token transfer TXNs in block: %s", txns.length)
                     if (txns.length > 0) {
                         fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(txns, null, 2));
+                        let indexerUrl = "https://avm-arc-nft-indexer-testnet.emg110.workers.dev/api/v1/tokens"
+                        let indexerRes = await fetch(indexerUrl, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(txns),
+                        })
+                        if(indexerRes.status = 200){
+                            // let indexerData = await indexerRes.json()
+                            if(indexerData && indexerData.data){
+                                fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns_indexed.json`), JSON.stringify(indexerData.data, null, 2));
+                            }
+                        }
                     }
 
                 }
