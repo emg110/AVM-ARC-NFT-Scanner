@@ -1,0 +1,28 @@
+{
+  "scanner": {
+    "scanner_wallet_address": "",
+    "host": "",
+    "network": "testnet",
+    "algod_remote_server": "https://mainnet-api.algonode.cloud",
+    "algod_testnet_remote_server": "https://testnet-api.algonode.cloud",
+    "indexer_remote_server": "https://mainnet-idx.algonode.cloud",
+    "indexer_testnet_remote_server": "https://testnet-idx.algonode.cloud",
+    "algod_remote_port": "",
+    "algod_remote_token": "",
+    "indexer_remote_token": "",
+    "indexer_remote_port": "",
+    "algo_dispenser": "https://dispenser.testnet.aws.algodev.network/?account=",
+    "verbose": false
+  },
+  "deployment": {
+    "version": "v0.0.2",
+    "mode": "remote",
+    "num_local_int": 0,
+    "num_local_byte": 0,
+    "num_global_int": 5,
+    "num_global_byte": 5,
+    "deployer_report": true,
+    "arc72_apps_to_delete": [],
+    "arc72s": []
+  }
+}

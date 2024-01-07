@@ -1,0 +1,36 @@
+{
+    "name": "avm-arc-nft-scanner-module",
+    "private": true,
+    "version": "0.0.2",
+    "description": "Node module for AVM ARC NFT scanner! Prepared for VOI Jan 2024 Hackathon",
+    "main": "index.js",
+    "scripts": {
+        "start":"node index.js",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "format": "prettier --write '**/*.{js,css,json,md}'"
+    },
+    "author": "{emg110.algo}",
+    "license": "MIT",
+    "devDependencies": {
+        "prettier": "^1.17.0"
+    },
+    "dependencies": {
+        "algosdk": "^2.5.0",
+        "node-fetch": "2",
+        "esrever": "latest",
+        "winston": "latest",
+        "chalk": "4.1.0",
+        "js-base64": "^3.7.5",
+        "js-sha512": "^0.8.0",
+        "bs58": "^5.0.0",
+        "form-data": "^4.0.0",
+        "js-sha256": "^0.10.1",
+        "tweetnacl": "^1.0.3",
+        "winston-transport": "^4.5.0",
+        "winston-transport-browserconsole": "^1.0.5",
+        "triple-beam": "^1.4.1",
+        "msgpack-long-lite":"^0.1.1",
+        "algo-msgpack-with-bigint":"^2.1.1",
+        "hi-base32":"^0.5.1"
+      }
+}
