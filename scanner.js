@@ -448,9 +448,9 @@ module.exports = class {
             let confirmedRound = resultTransferFrom.confirmedRound
             console.info(`ARC72 TransferFrom ABI call TXId =  %s`, txid);
             console.info(`ARC72 TransferFrom ABI call TXN confirmed round =  %s`, confirmedRound);
-            fs.writeFileSync(path.join(__dirname, 'start_round.txt'), `${confirmedRound}`)
+
             if (Number(idx) === 0) await this.printTransactionLogs(txid, confirmedRound)
-            
+
         }
     }
     async deployArc72Contract() {
@@ -497,6 +497,7 @@ module.exports = class {
         console.info('------------------------------')
         console.info("ARC 72 Application ID: %s", appId);
         console.info('------------------------------')
+        fs.writeFileSync(path.join(__dirname, 'start_round.txt'), `${transactionResponse['confirmed-round']}`)
         this.applicationId = appId
         this.applicationAddr = algosdk.getApplicationAddress(appId);
         await this.callArc72TransferFrom(1)
@@ -512,15 +513,33 @@ module.exports = class {
      * @returns {boolean} - True if the app is an ARC-72 app, false otherwise.
      */
     async checkIfAppIsArc72(apap) {
-        let decodedApap = await algodClient.disassemble(apap).do()
-        if (decodedApap.indexOf('0x53f02a40') > -1) {
-            return true
+        let apapBinary = Buffer.from(apap, 'base64');
+        apapBinary = apapBinary.slice(2, apapBinary.length)
+        try {
+            let decodedApap = await this.algodClient.disassemble(apapBinary)
+            console.log(decodedApap)
+            if(decodedApap.source){
+                let tealSource = Buffer.from(decodedApap.source).toString();
+                console.info(tealSource)
+                if (tealSource.indexOf('0x53f02a40') > -1) {
+                    return true
+                }
+            }
+            return false
+
+        } catch (error) {
+            console.error(error)
+            return false
         }
-        return false
+    
+        // if (decodedApap.indexOf('0x53f02a40') > -1) {
+        //     return true
+        // }
+        // return false
 
     }
     async printApplTransactionsFromBlocks() {
-        let start_round = Number( fs.readFileSync(path.join(__dirname, 'start_round.txt'), 'utf8')) || this.config.deployment['start_round'];
+        let start_round = Number(fs.readFileSync(path.join(__dirname, 'start_round.txt'), 'utf8')) || this.config.deployment['start_round'];
         if (algosdk.isValidAddress(this.accountObject.addr) && start_round > 0) {
             const urlTrx = `${this.config.scanner.network === 'testnet' ? this.config.scanner['algod_testnet_remote_server'] : this.config.scanner['algod_remote_server']}/v2/blocks/${start_round}`;
             let resTrx = await fetch(urlTrx, {
@@ -539,19 +558,22 @@ module.exports = class {
                     txns = await txns.map(async (item, index) => {
                         if (item && item.txn) {
                             let itxns = item.dt && item.dt.itx ? item.dt.itx : null;
-                            if (!!itxns) {
-                                itxns = itxns.map(async (itxn, index) => {
-                                    let itxnData = itxn.txn;
-                                    if (itxnData.type = 'appl' && itxnData['apap']) {
-                                        let isArc72 = await this.checkIfAppIsArc72(itxnData['apap'])
-                                        if (isArc72) {
-                                            return itxnData
-                                        }
-                                    }
-                                })
+                            // if (!!itxns) {
+                            //     itxns = itxns.map(async (itxn, index) => {
+                            //         let itxnData = itxn.txn;
+                            //         if (itxnData.type = 'appl' && itxnData['apap']) {
+                            //             let isArc72 = await this.checkIfAppIsArc72(itxnData['apap'])
+                            //             if (isArc72) {
+                            //                 return itxnData
+                            //             }
+                            //         }
+                            //     })
+                            // }
+                            let txn = null;
+                            if (item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apap'] && !item.txn['apid']) {
+                                let isArc72 = await this.checkIfAppIsArc72(item.txn['apap'])
+                                txn = isArc72 ? item.txn : null;
                             }
-                            let txn = item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apap'] && await this.checkIfAppIsArc72(itxnData['apap']) ? item.txn : null;
-
                             if (!!txn || !!itxns) {
                                 return {
                                     txn,
@@ -562,10 +584,10 @@ module.exports = class {
                         }
                     }).filter((item) => item.txn || item.itxns)
                     console.info("Number of appl creation TXNs in block: %s", txns.length)
-                    if(txns.length>0){
+                    if (txns.length > 0) {
                         fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(txns, null, 2));
                     }
-                    
+
                 }
 
             }
