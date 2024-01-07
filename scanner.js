@@ -443,7 +443,7 @@ module.exports = class {
         console.info('------------------------------')
         console.info("ARC72 Contract ABI Exec method = %s", methodTransferFrom);
         let tokenId = Number(BigInt('0x' + Buffer.from(atc.transactions[0].txn.appArgs[3]).toString('hex')))
-        let signature = Buffer.from(atc.transactions[0].txn.appArgs[0]).toString('hex');  
+        let signature = Buffer.from(atc.transactions[0].txn.appArgs[0]).toString('hex');
         const resultTransferFrom = await atc.execute(this.algodClient, 10);
         for (const idx in resultTransferFrom.methodResults) {
             let txid = resultTransferFrom.txIDs[idx]
@@ -455,7 +455,7 @@ module.exports = class {
 
         }
     }
-    async getApplicationTeal(appId){
+    async getApplicationTeal(appId) {
         let appInfo = await this.algodClient.getApplicationByID(appId).do();
         if (appInfo && appInfo.params) {
             if (appInfo.params["approval-program"]) {
@@ -543,7 +543,7 @@ module.exports = class {
         try {
             let decodedApap = await this.algodClient.disassemble(apapBinary)
             console.log(decodedApap)
-            if(decodedApap.source){
+            if (decodedApap.source) {
                 let tealSource = Buffer.from(decodedApap.source).toString();
                 console.info(tealSource)
                 if (tealSource.indexOf('0x53f02a40') > -1) {
@@ -556,7 +556,7 @@ module.exports = class {
             console.error(error)
             return false
         }
-    
+
         // if (decodedApap.indexOf('0x53f02a40') > -1) {
         //     return true
         // }
@@ -582,7 +582,7 @@ module.exports = class {
                     const txnsLength = txns.length
                     console.info("Scanned Block round: %s", start_round)
                     console.info("Number of TXNs in scanned block: %s", txnsLength)
-                    txns =  txns.map( (item, index) => {
+                    txns = txns.map((item, index) => {
                         if (item && item.txn) {
                             //let itxns = item.dt && item.dt.itx ? item.dt.itx : null;
                             // if (!!itxns) {
@@ -602,9 +602,9 @@ module.exports = class {
                             //     txn = isArc72 ? item.txn : null;
                             // }
                             if (item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apid'] && item.txn['apaa'] /* && item.txn['apar'].length === 4 */) {
-                                let args =  item.txn['apaa']
-                                if(args.length === 4 && Buffer.from(args[0], 'base64').toString('hex') === "f2f194a0"){
-                                    txn =  item.txn
+                                let args = item.txn['apaa']
+                                if (args.length === 4 && Buffer.from(args[0], 'base64').toString('hex') === "f2f194a0") {
+                                    txn = item.txn
                                 }
                             }
                             if (!!txn /* || !!itxns */) {
@@ -616,21 +616,33 @@ module.exports = class {
 
                         }
                     })
-                    txns = txns.filter((item)=>!!item && item !== null)
+                    txns = txns.filter((item) => !!item && item !== null)
                     console.info("Number of ARC72 token transfer TXNs in block: %s", txns.length)
                     if (txns.length > 0) {
                         fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(txns, null, 2));
                         let indexerUrl = "https://avm-arc-nft-indexer-testnet.emg110.workers.dev/api/v1/tokens"
+                        let ownerBuffer = Buffer.from(txns[0].txn.apaa[2], 'base64')
+                        let ownerBufferLength = ownerBuffer.length
+                        console.log(ownerBuffer.toString())
+                        let decodedAddress = algosdk.encodeAddress(ownerBuffer)
                         let indexerRes = await fetch(indexerUrl, {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
                             },
-                            body: JSON.stringify(txns),
+                            body: JSON.stringify(txns.map(txn => {
+                                return {
+                                    round: Number(start_round),
+                                    contractId: txn.txn['apid'],
+                                    tokenId: Number(BigInt('0x' + Buffer.from(txn.txn.apaa[3]).toString('hex'))),
+                                    owner: decodedAddress,
+                                    timestamp: txn.txn['round-time'],
+                                }
+                            })),
                         })
-                        if(indexerRes.status = 200){
+                        if (indexerRes.status = 200) {
                             // let indexerData = await indexerRes.json()
-                            if(indexerData && indexerData.data){
+                            if (indexerData && indexerData.data) {
                                 fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns_indexed.json`), JSON.stringify(indexerData.data, null, 2));
                             }
                         }
