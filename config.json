@@ -26,7 +26,7 @@
     "arc72_scanner_loop": false,
     "arc72_deploy": false,
     "arc72_scanner_with_deploy_loop": false,
-    "round": 35796537,
+    "start_round": 35796537,
     "arc72_apps_to_delete": [],
     "arc72s": []
   }

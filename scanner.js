@@ -402,9 +402,9 @@ module.exports = class {
     }
 
     async printApplTransactionsFromBlocks() {
-        let round = this.config.deployment['round']
+        let start_round = this.config.deployment['start_round']
         if (algosdk.isValidAddress(this.accountObject.addr)) {
-            const urlTrx = `${this.config.scanner.network === 'testnet' ? this.config.scanner['algod_testnet_remote_server'] : this.config.scanner['algod_remote_server']}/v2/blocks/${round}`;
+            const urlTrx = `${this.config.scanner.network === 'testnet' ? this.config.scanner['algod_testnet_remote_server'] : this.config.scanner['algod_remote_server']}/v2/blocks/${start_round}`;
 
             let resTrx = await fetch(urlTrx, {
                 method: "GET",
@@ -436,7 +436,7 @@ module.exports = class {
                         }
 
                     })
-                    fs.writeFileSync(path.join(__dirname, `round_${round}_scanned_txns.json`), JSON.stringify(block, null, 2))
+                    fs.writeFileSync(path.join(__dirname, `round_${start_round}_scanned_txns.json`), JSON.stringify(block, null, 2))
                     return block
                 }
 
