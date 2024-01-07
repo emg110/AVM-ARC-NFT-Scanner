@@ -93,7 +93,7 @@ The presenter API sits in FrontEnd role and deals with rate limiting, front gate
 The endpoints between Presenter and Indexing APIs use "POST" method but identical endpoint URL as [ARC74] describes! Data is transferred as JSON and "Content-Type" and "Accept" headers are both set to "application/json".
 
 ## Documentation
-API is documented and tested using Swagger/OpenAPI UI: https://voi-nft-indexer-api.vercel.app
+API is documented using: [Swagger](https://avm-arc-nft-indexer-testnet.emg110.workers.dev/)
 
 ## References
 
