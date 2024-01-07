@@ -442,15 +442,40 @@ module.exports = class {
         });
         console.info('------------------------------')
         console.info("ARC72 Contract ABI Exec method = %s", methodTransferFrom);
+        let tokenId = Number(BigInt('0x' + Buffer.from(atc.transactions[0].txn.appArgs[3]).toString('hex')))
+        let signature = Buffer.from(atc.transactions[0].txn.appArgs[0]).toString('hex');  
         const resultTransferFrom = await atc.execute(this.algodClient, 10);
         for (const idx in resultTransferFrom.methodResults) {
             let txid = resultTransferFrom.txIDs[idx]
             let confirmedRound = resultTransferFrom.confirmedRound
             console.info(`ARC72 TransferFrom ABI call TXId =  %s`, txid);
             console.info(`ARC72 TransferFrom ABI call TXN confirmed round =  %s`, confirmedRound);
-
+            fs.writeFileSync(path.join(__dirname, 'start_round.txt'), `${confirmedRound}`)
             if (Number(idx) === 0) await this.printTransactionLogs(txid, confirmedRound)
 
+        }
+    }
+    async getApplicationTeal(appId){
+        let appInfo = await this.algodClient.getApplicationByID(appId).do();
+        if (appInfo && appInfo.params) {
+            if (appInfo.params["approval-program"]) {
+                let approvalProgram = appInfo.params["approval-program"];
+                let clearProgram = appInfo.params["clear-state-program"];
+                let approvalProgramDecoded = Buffer.from(
+                    approvalProgram,
+                    "base64"
+                ).toString();
+                let clearProgramDecoded = Buffer.from(
+                    clearProgram,
+                    "base64"
+                ).toString();
+                console.info('------------------------------')
+                console.info("ARC72 Application Approval Program = %s", approvalProgramDecoded);
+                console.info('------------------------------')
+                console.info("ARC72 Application Clear Program = %s", clearProgramDecoded);
+                console.info('------------------------------')
+                return approvalProgramDecoded
+            }
         }
     }
     async deployArc72Contract() {
@@ -497,7 +522,7 @@ module.exports = class {
         console.info('------------------------------')
         console.info("ARC 72 Application ID: %s", appId);
         console.info('------------------------------')
-        fs.writeFileSync(path.join(__dirname, 'start_round.txt'), `${transactionResponse['confirmed-round']}`)
+        // fs.writeFileSync(path.join(__dirname, 'start_round.txt'), `${transactionResponse['confirmed-round']}`)
         this.applicationId = appId
         this.applicationAddr = algosdk.getApplicationAddress(appId);
         await this.callArc72TransferFrom(1)
@@ -538,6 +563,8 @@ module.exports = class {
         // return false
 
     }
+
+
     async printApplTransactionsFromBlocks() {
         let start_round = Number(fs.readFileSync(path.join(__dirname, 'start_round.txt'), 'utf8')) || this.config.deployment['start_round'];
         if (algosdk.isValidAddress(this.accountObject.addr) && start_round > 0) {
@@ -555,9 +582,9 @@ module.exports = class {
                     const txnsLength = txns.length
                     console.info("Scanned Block round: %s", start_round)
                     console.info("Number of TXNs in scanned block: %s", txnsLength)
-                    txns = await txns.map(async (item, index) => {
+                    txns =  txns.map( (item, index) => {
                         if (item && item.txn) {
-                            let itxns = item.dt && item.dt.itx ? item.dt.itx : null;
+                            //let itxns = item.dt && item.dt.itx ? item.dt.itx : null;
                             // if (!!itxns) {
                             //     itxns = itxns.map(async (itxn, index) => {
                             //         let itxnData = itxn.txn;
@@ -570,19 +597,26 @@ module.exports = class {
                             //     })
                             // }
                             let txn = null;
-                            if (item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apap'] && !item.txn['apid']) {
-                                let isArc72 = await this.checkIfAppIsArc72(item.txn['apap'])
-                                txn = isArc72 ? item.txn : null;
+                            // if (item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apap'] && !item.txn['apid']) {
+                            //     let isArc72 = await this.checkIfAppIsArc72(item.txn['apap'])
+                            //     txn = isArc72 ? item.txn : null;
+                            // }
+                            if (item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apid'] && item.txn['apaa'] /* && item.txn['apar'].length === 4 */) {
+                                let args =  item.txn['apaa']
+                                if(args.length === 4 && Buffer.from(args[0], 'base64').toString('hex') === "f2f194a0"){
+                                    txn =  item.txn
+                                }
                             }
-                            if (!!txn || !!itxns) {
+                            if (!!txn /* || !!itxns */) {
                                 return {
                                     txn,
-                                    itxns
+                                    /* itxns */
                                 }
                             }
 
                         }
-                    }).filter((item) => item.txn || item.itxns)
+                    })
+                    txns = txns.filter((item)=>!!item && item !== null)
                     console.info("Number of appl creation TXNs in block: %s", txns.length)
                     if (txns.length > 0) {
                         fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(txns, null, 2));
