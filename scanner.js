@@ -636,12 +636,12 @@ module.exports = class {
                                     contractId: txn.txn['apid'],
                                     tokenId: Number(BigInt('0x' + Buffer.from(txn.txn.apaa[3]).toString('hex'))),
                                     owner: decodedAddress,
-                                    timestamp: txn.txn['round-time'],
                                 }
                             })),
                         })
+                        
                         if (indexerRes.status = 200) {
-                            // let indexerData = await indexerRes.json()
+                            let indexerData = await indexerRes.json()
                             if (indexerData && indexerData.data) {
                                 fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns_indexed.json`), JSON.stringify(indexerData.data, null, 2));
                             }
