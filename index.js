@@ -34,6 +34,6 @@ const scanner = new Scanner({
     config,
     arc72ApprovalProgData: fs.readFileSync(path.join(__dirname, 'arc72-app.teal')),
     arc72ClearProgData: fs.readFileSync(path.join(__dirname, 'arc72-clear.teal')),
-    arc72Schema: fs.readFileSync(path.join(__dirname, 'arc72-abi.json')),
+    arc72Contract: fs.readFileSync(path.join(__dirname, 'arc72-abi.json')),
 });
 scanner.run();

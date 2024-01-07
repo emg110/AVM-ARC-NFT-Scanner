@@ -5,7 +5,7 @@
 
 #pragma version 8
 //Check TXN first
-callsub branch_check_txn
+callsub sub_check_txn
 
 // Check if the transaction is a create app call with app ID of 0
 txn ApplicationID
@@ -46,7 +46,7 @@ b branch_error
 
 branch_method_router:
 
-	method "create_arc72_token(account)uint256"
+	method "create_arc72_token(string)uint256"
 	txn ApplicationArgs 0
 	==
 	bnz method_create_arc72_token
@@ -86,6 +86,10 @@ branch_create:
 	byte "ARC72 NFT contract"
 	app_global_put
 
+	byte "arc72_index"
+	int 1
+	app_global_put
+
 	global CurrentApplicationID
 	itob
 	store 1
@@ -120,7 +124,7 @@ branch_optin:
 
 	err
 
-branch_check_txn:
+sub_check_txn:
 
 	// Checks RekeyTo address transaction field to be empty (ZeroAddress)
 	txn RekeyTo
@@ -157,6 +161,29 @@ branch_check_txn:
 	>=
 	assert
 	retsub
+
+method_arc72_transferFrom:
+
+	int 1
+	return
+
+method_arc72_ownerOf:
+ 
+ 	byte 0x151f7c75
+	global CurrentApplicationAddress
+	concat
+	b branch_log_return
+
+method_create_arc72_token:
+	byte 0x151f7c75
+	global CurrentApplicationID
+	itob
+	byte "arc72_index"
+	app_global_get
+	itob
+	concat
+	concat
+	b branch_log_return
 
 // Handles error endings
 branch_error:

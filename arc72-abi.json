@@ -48,5 +48,19 @@
                 "type": "void"
             }
         },
+        {
+            "name": "create_arc72_token",
+            "desc": "Creates a NFT under an ARC72 contract",
+            "readonly": false,
+            "args": [
+                {
+                    "type": "string",
+                    "name": "tokenURI"
+                }
+            ],
+            "returns": {
+                "type": "uint256"
+            }
+        }
     ]
 }

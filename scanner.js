@@ -23,8 +23,9 @@ module.exports = class {
         this.indexerToken = props.config.scanner.indexer_remote_token
         this.indexerPort = props.config.scanner.indexer_remote_port
         this.indexerClient = new algosdk.Indexer(this.algodToken, this.indexerServer, this.indexerPort)
-        this.approvalProgData = props.approvalProgData
-        this.clearProgData = props.clearProgData
+        this.approvalProgData = props.arc72ApprovalProgData
+        this.clearProgData = props.arc72ClearProgData
+        this.arc72Contract = props.arc72Contract
 
         this.accountObject = null
         this.accountBalance = null
@@ -400,6 +401,141 @@ module.exports = class {
             console.error(err);
         }
     }
+    async callArc72TransferFrom(index) {
+        let addr = this.accountObject.addr;
+        let params = await this.algodClient.getTransactionParams().do();
+        let application = Number(this.applicationId)
+        let applicationAddress = this.applicationAddr
+        const arc72Contract = new algosdk.ABIContract(JSON.parse(this.arc72Contract.toString()))
+        const signer = algosdk.makeBasicAccountTransactionSigner(this.accountObject)
+
+
+        const atc = new algosdk.AtomicTransactionComposer()
+        let methodTransferFrom = this.getMethodByName("arc72_transferFrom", arc72Contract)
+
+
+        // let appEncode = algosdk.encodeUint64(application)
+        // let tokenIndexEncode = algosdk.encodeUint256(index)
+        const args = [
+            applicationAddress,
+            addr,
+            Number(`${application}${index}`)
+        ];
+        let appCallNote = algosdk.encodeObj(
+            JSON.stringify({
+                arc72: `transfer token ${application}${index}from ${applicationAddress} to ${addr}!`,
+            })
+        );
+        //let acc_decoded = algosdk.decodeAddress(addr);
+        atc.addMethodCall({
+            signer: signer,
+            note: appCallNote,
+            sender: addr,
+            suggestedParams: params,
+            appID: application,
+            method: methodTransferFrom,
+            accounts: [
+                addr,
+            ],
+
+            methodArgs: args,
+        });
+        console.info('------------------------------')
+        console.info("ARC72 Contract ABI Exec method = %s", methodTransferFrom);
+        const resultTransferFrom = await atc.execute(this.algodClient, 10);
+        for (const idx in resultTransferFrom.methodResults) {
+            let txid = resultTransferFrom.txIDs[idx]
+            let confirmedRound = resultTransferFrom.confirmedRound
+            console.info(`ARC72 TransferFrom ABI call TXId =  %s`, txid);
+            console.info(`ARC72 TransferFrom ABI call TXN confirmed round =  %s`, confirmedRound);
+            if (Number(idx) === 0) await this.printTransactionLogs(txid, confirmedRound)
+            let returnedResults = resultTransferFrom.methodResults[idx].rawReturnValue
+            try {
+                let addr = algosdk.decodeAddress(returnedResults)
+                console.info("ARC72 Transfer from ABI Exec method TransferFrom = %s", addr);
+            } catch (error) {
+                try {
+                    let uint = algosdk.decodeUint64(returnedResults)
+                    if (uint > 0 && uint < 9999999999) {
+                        console.info("ARC72 Contract ABI Exec method TransferFrom = %s", uint);
+                    } else if (Buffer.from(returnedResults).byteLength === 8 && uint === 0) {
+                        console.info(`ARC72 ABI Call log decodedUint64 [${logIndex}]: %s`, 0)
+                    } else {
+                        throw new Error();
+                    }
+                } catch (error) {
+                    try {
+                        let res = Buffer.from(returnedResults).toString()
+                        console.info("ARC72 Contract ABI Exec method result = %s", res)
+                    } catch (error) {
+                        let res = Buffer.from(returnedResults)
+
+                        let resBase32 = base32.encode(res).replace(/=/g, '').slice(0, 52)
+
+                        console.info("ARC72 Contract ABI Exec method result = %s", resBase32);
+                    }
+                }
+            }
+        }
+    }
+    async deployArc72Contract() {
+        let addr = this.accountObject.addr;
+        let localInts = this.config.deployment['num_local_int'];
+        let localBytes = this.config.deployment['num_local_byte'];
+        let globalInts = this.config.deployment['num_global_int'];
+        let globalBytes = this.config.deployment['num_global_byte'];
+        let params = await this.algodClient.getTransactionParams().do();
+        let onComplete = algosdk.OnApplicationComplete.NoOpOC;
+
+        const compiledResult = await this.algodClient.compile(this.approvalProgData).do();
+        const compiledClearResult = await this.algodClient.compile(this.clearProgData).do();
+        const compiledResultUint8 = new Uint8Array(Buffer.from(compiledResult.result, "base64"));
+        const compiledClearResultUint8 = new Uint8Array(Buffer.from(compiledClearResult.result, "base64"));
+        console.info('------------------------------')
+        console.info("ARC 72 Contract Hash = %s", compiledResult.hash);
+        //console.info("ARC 72 Contract Result = %s", compiledResult.result)
+        console.info("ARC 72 Clear Hash = %s", compiledClearResult.hash);
+        //console.info("ARC 72 Clear Result = %s", compiledClearResult.result);
+        params.fee = 1000
+        params.flatFee = true
+        let appTxn = algosdk.makeApplicationCreateTxnFromObject({
+            from: addr, suggestedParams: params, onComplete,
+            approvalProgram: compiledResultUint8, clearProgram: compiledClearResultUint8,
+            numLocalInts: localInts, numLocalByteSlices: localBytes, numGlobalInts: globalInts, numGlobalByteSlices: globalBytes, extraPages: 0
+        });
+        let appTxnId = appTxn.txID().toString();
+
+        console.info('------------------------------')
+        console.info("ARC 72 Application Creation TXId =  %s", appTxnId);
+        let signedAppTxn = appTxn.signTxn(this.accountObject.sk);
+        await this.algodClient.sendRawTransaction(signedAppTxn).do();
+        await algosdk.waitForConfirmation(this.algodClient, appTxnId, 5)
+
+        let transactionResponse = await this.algodClient.pendingTransactionInformation(appTxnId).do();
+        let appId = transactionResponse['application-index'];
+        await this.printTransactionLogs(appTxnId)
+        await this.printAppGlobalState(appId)
+        console.info('------------------------------')
+        console.info("ARC 72 Transaction ID: %s", appTxnId);
+        console.info('------------------------------')
+        console.info("ARC 72 Transaction Confirmed Round: %s", transactionResponse['confirmed-round']);
+        console.info('------------------------------')
+        console.info("ARC 72 Application ID: %s", appId);
+        console.info('------------------------------')
+        this.applicationId = appId
+        this.applicationAddr = algosdk.getApplicationAddress(appId);
+        await this.callArc72TransferFrom(1)
+        await this.callArc72TransferFrom(2)
+        await this.callArc72TransferFrom(3)
+        console.info('------------------------------')
+        console.info("ARC 72 Application Address: %s", algosdk.getApplicationAddress(Number(appId)));
+        console.info('------------------------------')
+    }
+    /**
+     * Checks if the given app is an ARC-72 app.
+     * @param {string} apap - The app to check.
+     * @returns {boolean} - True if the app is an ARC-72 app, false otherwise.
+     */
     async checkIfAppIsArc72(apap) {
         let decodedApap = await algodClient.disassemble(apap).do()
         if (decodedApap.indexOf('0x53f02a40') > -1) {
@@ -412,7 +548,6 @@ module.exports = class {
         let start_round = this.config.deployment['start_round']
         if (algosdk.isValidAddress(this.accountObject.addr)) {
             const urlTrx = `${this.config.scanner.network === 'testnet' ? this.config.scanner['algod_testnet_remote_server'] : this.config.scanner['algod_remote_server']}/v2/blocks/${start_round}`;
-
             let resTrx = await fetch(urlTrx, {
                 method: "GET",
                 headers: {
@@ -440,7 +575,7 @@ module.exports = class {
                                 })
                             }
                             let txn = item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apap'] && await this.checkIfAppIsArc72(itxnData['apap']) ? item.txn : null;
-                          
+
                             if (!!txn || !!itxns) {
                                 return {
                                     txn,
@@ -449,7 +584,7 @@ module.exports = class {
                             }
 
                         }
-                    }).filter((item)=>item.txn || item.itxns)
+                    }).filter((item) => item.txn || item.itxns)
                     console.info("Number of appl creation TXNs in block: %s", txns.length)
                     fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(txns, null, 2))
                     return txns
@@ -467,6 +602,7 @@ module.exports = class {
         await this.deploymentAccount()
         if (this.config.deployment['deployment_report']) await this.deploymentReport();
         if (this.config.deployment['arc72_scanner_round']) await this.printApplTransactionsFromBlocks();
+        if (this.config.deployment['arc72_deploy']) await this.deployArc72Contract();
         process.exit();
     }
 }
