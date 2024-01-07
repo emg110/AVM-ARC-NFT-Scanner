@@ -1,4 +1,5 @@
-# ARC74 based ARC72 NFT Indexer API
+# ARC74 based ARC72 NFT Indexer API / Scanner Module
+
 ### Jan 2024 Voi Hackathon Team Project API Repository
 
 **Team:**
@@ -8,7 +9,7 @@
 
 
 ## Table of Contents
-- [ARC74 based ARC72 NFT Indexer API](#arc74-based-arc72-nft-indexer-api)
+- [ARC74 based ARC72 NFT Indexer API / Scanner Module](#arc74-based-arc72-nft-indexer-api--scanner-module)
     - [Jan 2024 Voi Hackathon Team Project API Repository](#jan-2024-voi-hackathon-team-project-api-repository)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
