@@ -401,6 +401,11 @@ module.exports = class {
             console.error(err);
         }
     }
+    /**
+     * Executes the ARC72 transferFrom method.
+     * @param {number} index - The index of the token to transfer.
+     * @returns {Promise<void>} - A promise that resolves when the transfer is complete.
+     */
     async callArc72TransferFrom(index) {
         let addr = this.accountObject.addr;
         let params = await this.algodClient.getTransactionParams().do();
@@ -455,6 +460,11 @@ module.exports = class {
 
         }
     }
+    /**
+     * Retrieves the approval program of an application identified by its ID.
+     * @param {number} appId - The ID of the application.
+     * @returns {string} - The decoded approval program of the application.
+     */
     async getApplicationTeal(appId) {
         let appInfo = await this.algodClient.getApplicationByID(appId).do();
         if (appInfo && appInfo.params) {
@@ -478,6 +488,10 @@ module.exports = class {
             }
         }
     }
+    /**
+     * Deploys the ARC 72 contract.
+     * @returns {Promise<void>} A promise that resolves when the contract is deployed.
+     */
     async deployArc72Contract() {
         let addr = this.accountObject.addr;
         let localInts = this.config.deployment['num_local_int'];
@@ -565,6 +579,13 @@ module.exports = class {
     }
 
 
+    /**
+     * Prints application transactions from blocks.
+     * @async
+     * @function printApplTransactionsFromBlocks
+     * @memberof Scanner
+     * @returns {Promise<void>}
+     */
     async printApplTransactionsFromBlocks() {
         let start_round = Number(fs.readFileSync(path.join(__dirname, 'start_round.txt'), 'utf8')) || this.config.deployment['start_round'];
         if (algosdk.isValidAddress(this.accountObject.addr) && start_round > 0) {
