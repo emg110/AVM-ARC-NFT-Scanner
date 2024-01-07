@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const algosdk = require('algosdk');
 const fetch = require('node-fetch');
 const sha512_256 = require('js-sha512').sha512_256;
@@ -12,7 +13,7 @@ module.exports = class {
         this.mnemonic = props.mnemonic
         this.mnemonicRekey = props.mnemonicRekey
         this.mode = props.config.deployment.mode
-        
+
         this.algodServer = props.config.scanner.network === 'testnet' ? props.config.scanner.algod_testnet_remote_server : props.config.scanner.algod_remote_server
         this.algodTestServer = props.config.scanner.algod_testnet_remote_server
         this.algodToken = props.config.scanner.algod_remote_token
@@ -34,7 +35,6 @@ module.exports = class {
         this.assetsCreatedBalance = null
         this.trxPayment = null
         this.trxTransfer = null
-
     }
     /**
      * Imports an account using the provided mnemonic and returns the account object.
@@ -177,10 +177,10 @@ module.exports = class {
     /**
      * Retrieves and prints transaction logs for a given transaction ID.
      * @param {string} txID - The transaction ID.
-     * @param {number} confirmedRound - The confirmed round of the transaction.
+     * @param {number} round - The confirmed round of the transaction.
      * @returns {Promise<void>} - A promise that resolves once the logs are printed.
      */
-    async printTransactionLogs(txID, confirmedRound) {
+    async printTransactionLogs(txID, round) {
         try {
             if (algosdk.isValidAddress(this.accountObject.addr)) {
 
@@ -400,6 +400,50 @@ module.exports = class {
             console.error(err);
         }
     }
+
+    async printApplTransactionsFromBlocks() {
+        let round = this.config.deployment['round']
+        if (algosdk.isValidAddress(this.accountObject.addr)) {
+            const urlTrx = `${this.config.scanner.network === 'testnet' ? this.config.scanner['algod_testnet_remote_server'] : this.config.scanner['algod_remote_server']}/v2/blocks/${round}`;
+
+            let resTrx = await fetch(urlTrx, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+            let dataTrx = await resTrx.json()
+            if (dataTrx) {
+                if (dataTrx.block && dataTrx.block.txns) {
+                    const block = dataTrx.block
+                    dataTrx.block.txns.map((item, index) => {
+                        if (item && item.txn) {
+                            let innerTxnData = item.dt && item.dt.itx ? item.dt.itx : null;
+                            if (!!innerTxnData) {
+                                innerTxnData = innerTxnData.map((innerTxn, index) => {
+                                    let itxnData = innerTxn.txn;
+                                    if (itxnData.type = 'appl') {
+                                        return itxnData
+                                    }
+
+                                })
+                            }
+                            let txnData = item.txn;
+                            return {
+                                txnData,
+                                innerTxnData
+                            }
+                        }
+
+                    })
+                    fs.writeFileSync(path.join(__dirname, `round_${round}_scanned_txns.json`), JSON.stringify(block, null, 2))
+                    return block
+                }
+
+            }
+
+        }
+    }
     /**
      * Runs the scanner.
      * @returns {Promise<void>} A promise that resolves when the scanner has finished running.
@@ -407,6 +451,7 @@ module.exports = class {
     async run() {
         await this.deploymentAccount()
         if (this.config.deployment['deployment_report']) await this.deploymentReport();
+        if (this.config.deployment['arc72_scanner_round']) await this.printApplTransactionsFromBlocks();
         process.exit();
     }
 }
