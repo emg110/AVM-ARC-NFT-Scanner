@@ -634,7 +634,8 @@ module.exports = class {
                                 let ownerBuffer = Buffer.from(txn.apaa[2], 'base64');
                                 let decodedAddress = algosdk.encodeAddress(ownerBuffer);
                                 console.log("Decoded ARC72 token owner address: ", decodedAddress);
-                                let tokenId = Number(BigInt('0x' + Buffer.from(txn.apaa[3]).toString('hex')));
+                                let apaaBuffer = Buffer.from(txn.apaa[3], 'base64');
+                                let tokenId = Number(BigInt('0x' + apaaBuffer.toString('hex')));
                                 console.log("Decoded ARC72 token id: ", tokenId);
                                 let arc72Token = {
                                     round: Number(start_round),
