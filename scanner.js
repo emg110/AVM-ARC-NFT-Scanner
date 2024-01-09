@@ -603,7 +603,8 @@ module.exports = class {
                     console.info("Scanned Block round: %s", start_round)
                     console.info("Number of TXNs in scanned block: %s", txnsLength)
                     let scannedTxns = []
-                    txns =  txns.map(async(item, index) => {
+                    for (let index = 0; index < txns.length; index++) {
+                        let item = txns[index];
                         if (item && item.txn) {
                             //let itxns = item.dt && item.dt.itx ? item.dt.itx : null;
                             // if (!!itxns) {
@@ -655,7 +656,8 @@ module.exports = class {
                             }
 
                         }
-                    })
+                        
+                    }
                     fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(scannedTxns, null, 2))
                     console.info("Number of ARC72 token transfer TXNs in block: %s", scannedTxns.length)
                     
