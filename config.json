@@ -22,10 +22,9 @@
     "num_global_int": 5,
     "num_global_byte": 5,
     "deployment_report": false,
-    "arc72_deploy": true,
-    "arc72_scanner_round": true,
-    "arc72_scanner_loop": false,
-    "arc72_scanner_with_deploy_loop": false,
+    "arc72_deploy": false,
+    "arc72_scanner_round": false,
+    "run_scanner": true,
     "start_round": 36002340,
     "arc72_apps_to_delete": [],
     "arc72s": []

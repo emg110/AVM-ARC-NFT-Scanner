@@ -585,8 +585,8 @@ module.exports = class {
      * @memberof Scanner
      * @returns {Promise<void>}
      */
-    async printApplTransactionsFromBlocks() {
-        let start_round = Number(fs.readFileSync(path.join(__dirname, 'start_round.txt'), 'utf8')) || this.config.deployment['start_round'];
+    async printApplTransactionsFromBlocks(start_round) {
+
         if (algosdk.isValidAddress(this.accountObject.addr) && start_round > 0) {
             const urlTrx = `${this.config.scanner.network === 'testnet' ? this.config.scanner['algod_testnet_remote_server'] : this.config.scanner['algod_remote_server']}/v2/blocks/${start_round}`;
             let resTrx = await fetch(urlTrx, {
@@ -667,6 +667,15 @@ module.exports = class {
 
         }
     }
+
+    async runScanner(start_round) {
+
+        while (start_round) {
+            console.info(`Now scanning round: ${start_round}`)
+            await this.printApplTransactionsFromBlocks(start_round);
+            start_round++;
+        }
+    }
     /**
      * Runs the scanner.
      * @returns {Promise<void>} A promise that resolves when the scanner has finished running.
@@ -674,8 +683,17 @@ module.exports = class {
     async run() {
         await this.deploymentAccount();
         if (this.config.deployment['deployment_report']) await this.deploymentReport();
-        if (this.config.deployment['arc72_deploy']) await this.deployArc72Contract();
-        if (this.config.deployment['arc72_scanner_round']) await this.printApplTransactionsFromBlocks();
+        if (this.config.deployment['arc72_deploy']) {
+            await this.deployArc72Contract();
+        }
+        if (this.config.deployment['run_scanner']) {
+            let start_round = Number(fs.readFileSync(path.join(__dirname, 'start_round.txt'), 'utf8')) || this.config.deployment['start_round'];
+            await this.runScanner(start_round);
+        }
+        else if (this.config.deployment['arc72_scanner_round']) {
+            let start_round = Number(fs.readFileSync(path.join(__dirname, 'start_round.txt'), 'utf8')) || this.config.deployment['start_round'];
+            await this.printApplTransactionsFromBlocks(start_round)
+        };
         process.exit();
     }
 }
