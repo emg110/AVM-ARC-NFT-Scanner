@@ -652,7 +652,7 @@ module.exports = class {
                                 })
                                 if (indexerRes.status === 200) {
                                     scannedTxns.push(arc72Token)
-                                    return txn
+                             
                                 }
                             }
 
