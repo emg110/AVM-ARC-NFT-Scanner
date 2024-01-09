@@ -635,20 +635,21 @@ module.exports = class {
                                 let ownerBufferLength = ownerBuffer.length
                                 let decodedAddress = algosdk.encodeAddress(ownerBuffer)
                                 console.log(decodedAddress)
+                                let arc72Token = {
+                                    round: Number(start_round),
+                                    contractId: txn['apid'],
+                                    tokenId: Number(BigInt('0x' + Buffer.from(txn.apaa[3]).toString('hex'))),
+                                    owner: decodedAddress,
+                                }
                                 let indexerRes = await fetch(indexerUrl, {
                                     method: "POST",
                                     headers: {
                                         "Content-Type": "application/json",
                                     },
-                                    body: JSON.stringify({
-                                        round: Number(start_round),
-                                        contractId: txn.txn['apid'],
-                                        tokenId: Number(BigInt('0x' + Buffer.from(txn.txn.apaa[3]).toString('hex'))),
-                                        owner: decodedAddress,
-                                    }),
+                                    body: JSON.stringify(arc72Token),
                                 })
                                 if (indexerRes.status === 200) {
-                                    scannedTxns.push(txn)
+                                    scannedTxns.push(arc72Token)
                                     return txn
                                 }
                             }
