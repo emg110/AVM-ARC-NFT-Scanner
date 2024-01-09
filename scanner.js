@@ -649,6 +649,7 @@ module.exports = class {
                                 })
                                 if (indexerRes.status === 200) {
                                     scannedTxns.push(txn)
+                                    return txn
                                 }
                             }
 
