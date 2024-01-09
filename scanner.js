@@ -630,7 +630,7 @@ module.exports = class {
                                 }
                             }
                             if (!!txn /* || !!itxns */) {
-                                let indexerUrl = "https://avm-arc-nft-indexer-testnet.emg110.workers.dev/api/v1/tokens"
+                                let indexerUrl = "https://avm-arc-nft-indexer-testnet.emg110.workers.dev/api/v1/tokens";
                                 let ownerBuffer = Buffer.from(txn.apaa[2], 'base64');
                                 let decodedAddress = algosdk.encodeAddress(ownerBuffer);
                                 console.log("Decoded ARC72 token owner address: ", decodedAddress);
