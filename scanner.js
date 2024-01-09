@@ -646,6 +646,7 @@ module.exports = class {
                                     method: "POST",
                                     headers: {
                                         "Content-Type": "application/json",
+                                        "Authorization": `Bearer ${this.config.scanner['indexer_remote_token']}`,
                                     },
                                     body: JSON.stringify(arc72Token),
                                 })

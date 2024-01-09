@@ -9,7 +9,7 @@
     "indexer_testnet_remote_server": "https://testnet-idx.algonode.cloud",
     "algod_remote_port": "",
     "algod_remote_token": "",
-    "indexer_remote_token": "",
+    "indexer_remote_token": "YzMTI5MmY3NzlhNTY2NGQ0ZTg2ODRkMjFkYTplYjNjYTEzOWEwYTI",
     "indexer_remote_port": "",
     "algo_dispenser": "https://dispenser.testnet.aws.algodev.network/?account=",
     "verbose": false
