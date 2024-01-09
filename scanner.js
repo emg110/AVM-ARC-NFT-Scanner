@@ -450,13 +450,13 @@ module.exports = class {
         let tokenId = Number(BigInt('0x' + Buffer.from(atc.transactions[0].txn.appArgs[3]).toString('hex')))
         let signature = Buffer.from(atc.transactions[0].txn.appArgs[0]).toString('hex');
         const resultTransferFrom = await atc.execute(this.algodClient, 10);
-        for (const idx in resultTransferFrom.methodResults) {
-            let txid = resultTransferFrom.txIDs[idx]
+        if (resultTransferFrom.methodResults) {
+            let txid = resultTransferFrom.txIDs[0]
             let confirmedRound = resultTransferFrom.confirmedRound
             console.info(`ARC72 TransferFrom ABI call TXId =  %s`, txid);
             console.info(`ARC72 TransferFrom ABI call TXN confirmed round =  %s`, confirmedRound);
             fs.writeFileSync(path.join(__dirname, 'start_round.txt'), `${confirmedRound}`)
-            if (Number(idx) === 0) await this.printTransactionLogs(txid, confirmedRound)
+            await this.printTransactionLogs(txid, confirmedRound)
 
         }
     }
