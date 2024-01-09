@@ -594,15 +594,15 @@ module.exports = class {
                 headers: {
                     "Content-Type": "application/json",
                 },
-            })
-            let dataTrx = await resTrx.json()
+            });
+            let dataTrx = await resTrx.json();
             if (dataTrx) {
                 if (dataTrx.block && dataTrx.block.txns) {
-                    let txns = dataTrx.block.txns
-                    const txnsLength = txns.length
-                    console.info("Scanned Block round: %s", start_round)
-                    console.info("Number of TXNs in scanned block: %s", txnsLength)
-                    let scannedTxns = []
+                    let txns = dataTrx.block.txns;
+                    const txnsLength = txns.length;
+                    console.info("Scanned Block round: %s", start_round);
+                    console.info("Number of TXNs in scanned block: %s", txnsLength);
+                    let scannedTxns = [];
                     for (let index = 0; index < txns.length; index++) {
                         let item = txns[index];
                         if (item && item.txn) {
@@ -620,28 +620,28 @@ module.exports = class {
                             // }
                             let txn = null;
                             if (item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apap'] && !item.txn['apid']) {
-                                let isArc72 = await this.checkIfAppIsArc72(item.txn['apap'])
+                                let isArc72 = await this.checkIfAppIsArc72(item.txn['apap']);
                                 txn = isArc72 ? item.txn : null;
                             }
                             if (item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apid'] && item.txn['apaa'] /* && item.txn['apar'].length === 4 */) {
-                                let args = item.txn['apaa']
+                                let args = item.txn['apaa'];
                                 if (args.length === 4 && Buffer.from(args[0], 'base64').toString('hex') === "f2f194a0") {
-                                    txn = item.txn
+                                    txn = item.txn;
                                 }
                             }
                             if (!!txn /* || !!itxns */) {
-                                
                                 let indexerUrl = "https://avm-arc-nft-indexer-testnet.emg110.workers.dev/api/v1/tokens"
-                                let ownerBuffer = Buffer.from(txn.apaa[2], 'base64')
-                                let ownerBufferLength = ownerBuffer.length
-                                let decodedAddress = algosdk.encodeAddress(ownerBuffer)
-                                console.log(decodedAddress)
+                                let ownerBuffer = Buffer.from(txn.apaa[2], 'base64');
+                                let decodedAddress = algosdk.encodeAddress(ownerBuffer);
+                                console.log("Decoded ARC72 token owner address: ", decodedAddress);
+                                let tokenId = Number(BigInt('0x' + Buffer.from(txn.apaa[3]).toString('hex')));
+                                console.log("Decoded ARC72 token id: ", tokenId);
                                 let arc72Token = {
                                     round: Number(start_round),
                                     contractId: txn['apid'],
-                                    tokenId: Number(BigInt('0x' + Buffer.from(txn.apaa[3]).toString('hex'))),
+                                    tokenId: tokenId,
                                     owner: decodedAddress,
-                                }
+                                };
                                 let indexerRes = await fetch(indexerUrl, {
                                     method: "POST",
                                     headers: {
@@ -649,20 +649,17 @@ module.exports = class {
                                         "Authorization": `Bearer ${this.config.scanner['indexer_remote_token']}`,
                                     },
                                     body: JSON.stringify(arc72Token),
-                                })
+                                });
                                 if (indexerRes.status === 200) {
-                                    scannedTxns.push(arc72Token)
-                             
+                                    scannedTxns.push(arc72Token);
                                 }
                             }
 
                         }
-                        
-                    }
-                    fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(scannedTxns, null, 2))
-                    console.info("Number of ARC72 token transfer TXNs in block: %s", scannedTxns.length)
-                    
 
+                    }
+                    fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(scannedTxns, null, 2));
+                    console.info("Number of ARC72 token transfer TXNs in block: %s", scannedTxns.length);
                 }
 
             }
@@ -674,7 +671,7 @@ module.exports = class {
      * @returns {Promise<void>} A promise that resolves when the scanner has finished running.
      */
     async run() {
-        await this.deploymentAccount()
+        await this.deploymentAccount();
         if (this.config.deployment['deployment_report']) await this.deploymentReport();
         if (this.config.deployment['arc72_deploy']) await this.deployArc72Contract();
         if (this.config.deployment['arc72_scanner_round']) await this.printApplTransactionsFromBlocks();
