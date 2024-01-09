@@ -553,7 +553,7 @@ module.exports = class {
      */
     async checkIfAppIsArc72(apap) {
         let apapBinary = Buffer.from(apap, 'base64');
-        apapBinary = apapBinary.slice(2, apapBinary.length)
+        //apapBinary = apapBinary.slice(2, apapBinary.length)
         try {
             let decodedApap = await this.algodClient.disassemble(apapBinary)
             console.log(decodedApap)
@@ -602,7 +602,8 @@ module.exports = class {
                     const txnsLength = txns.length
                     console.info("Scanned Block round: %s", start_round)
                     console.info("Number of TXNs in scanned block: %s", txnsLength)
-                    txns = txns.map((item, index) => {
+                    let scannedTxns = []
+                    txns =  txns.map(async(item, index) => {
                         if (item && item.txn) {
                             //let itxns = item.dt && item.dt.itx ? item.dt.itx : null;
                             // if (!!itxns) {
@@ -617,10 +618,10 @@ module.exports = class {
                             //     })
                             // }
                             let txn = null;
-                            // if (item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apap'] && !item.txn['apid']) {
-                            //     let isArc72 = await this.checkIfAppIsArc72(item.txn['apap'])
-                            //     txn = isArc72 ? item.txn : null;
-                            // }
+                            if (item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apap'] && !item.txn['apid']) {
+                                let isArc72 = await this.checkIfAppIsArc72(item.txn['apap'])
+                                txn = isArc72 ? item.txn : null;
+                            }
                             if (item.txn && item.txn.type && item.txn.type === 'appl' && item.txn['apid'] && item.txn['apaa'] /* && item.txn['apar'].length === 4 */) {
                                 let args = item.txn['apaa']
                                 if (args.length === 4 && Buffer.from(args[0], 'base64').toString('hex') === "f2f194a0") {
@@ -628,45 +629,34 @@ module.exports = class {
                                 }
                             }
                             if (!!txn /* || !!itxns */) {
-                                return {
-                                    txn,
-                                    /* itxns */
+                                
+                                let indexerUrl = "https://avm-arc-nft-indexer-testnet.emg110.workers.dev/api/v1/tokens"
+                                let ownerBuffer = Buffer.from(txn.apaa[2], 'base64')
+                                let ownerBufferLength = ownerBuffer.length
+                                let decodedAddress = algosdk.encodeAddress(ownerBuffer)
+                                console.log(decodedAddress)
+                                let indexerRes = await fetch(indexerUrl, {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                        round: Number(start_round),
+                                        contractId: txn.txn['apid'],
+                                        tokenId: Number(BigInt('0x' + Buffer.from(txn.txn.apaa[3]).toString('hex'))),
+                                        owner: decodedAddress,
+                                    }),
+                                })
+                                if (indexerRes.status === 200) {
+                                    scannedTxns.push(txn)
                                 }
                             }
 
                         }
                     })
-                    txns = txns.filter((item) => !!item && item !== null)
-                    console.info("Number of ARC72 token transfer TXNs in block: %s", txns.length)
-                    if (txns.length > 0) {
-                        fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(txns, null, 2));
-                        let indexerUrl = "https://avm-arc-nft-indexer-testnet.emg110.workers.dev/api/v1/tokens"
-                        let ownerBuffer = Buffer.from(txns[0].txn.apaa[2], 'base64')
-                        let ownerBufferLength = ownerBuffer.length
-                        console.log(ownerBuffer.toString())
-                        let decodedAddress = algosdk.encodeAddress(ownerBuffer)
-                        let indexerRes = await fetch(indexerUrl, {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify(txns.map(txn => {
-                                return {
-                                    round: Number(start_round),
-                                    contractId: txn.txn['apid'],
-                                    tokenId: Number(BigInt('0x' + Buffer.from(txn.txn.apaa[3]).toString('hex'))),
-                                    owner: decodedAddress,
-                                }
-                            })),
-                        })
-
-                        if (indexerRes.status === 200) {
-                            let indexerData = await indexerRes.json()
-                            if (indexerData && indexerData.data) {
-                                fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns_indexed.json`), JSON.stringify(indexerData.data, null, 2));
-                            }
-                        }
-                    }
+                    fs.writeFileSync(path.join(__dirname, `rounds/round_${start_round}_scanned_txns.json`), JSON.stringify(scannedTxns, null, 2))
+                    console.info("Number of ARC72 token transfer TXNs in block: %s", scannedTxns.length)
+                    
 
                 }
 
